@@ -1,0 +1,22 @@
+flask>=2.0.0
+sentence-transformers>=2.0.0
+torch>=1.9.0
+nltk>=3.6.0
+pyyaml>=5.4.0
+pandas>=1.3.0
+openpyxl>=3.0.0
+xlrd>=2.0.1
+xlwings>=0.24.0
+pyexcel>=0.7.0
+pyexcel-xls>=0.7.0
+xlutils>=2.0.0
+psutil>=5.9.0
+python-docx>=0.8.11
+pdfminer.six>=20201018
+# 文本提取工具（替代textract）
+PyPDF2>=3.0.0
+pdfplumber>=0.7.0
+docx2txt>=0.8
+chardet>=5.0.0
+scikit-learn>=1.0.0
+textract==1.6.3
