@@ -1,0 +1,2 @@
+# DocumentDuplicationDetection
+AI Document Compare
