@@ -1,0 +1,20 @@
+{% set is_word = True %}
+{% extends "single_compare.html" %}
+
+{#
+  说明：
+  - 复用 single_compare.html 的整体布局与样式
+  - 仅覆盖脚本片段，启用 Word 专用的区间高亮与定位策略
+#}
+
+{% block body %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.querySelector('.container');
+    if (container) container.setAttribute('data-filetype', 'word');
+});
+</script>
+{% endblock %}
+
+

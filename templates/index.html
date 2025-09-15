@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档相似度比较</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 900px;
+            width: 90%;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            font-weight: 300;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .form-group {
+            margin-bottom: 25px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .radio-group {
+            display: flex;
+            gap: 30px;
+            margin-top: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+        }
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .radio-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+        .radio-item input[type="radio"] {
+            margin: 0;
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+        .radio-item input[type="radio"]:checked + label {
+            color: #667eea;
+            font-weight: 600;
+        }
+        .radio-item label {
+            margin: 0;
+            cursor: pointer;
+            font-size: 1.1em;
+            color: #495057;
+            transition: color 0.3s ease;
+        }
+        .file-input-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+        input[type="file"]:hover {
+            border-color: #667eea;
+            background: #e3f2fd;
+        }
+        input[type="file"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 18px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #f5c6cb;
+            font-weight: 500;
+        }
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .form-section:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+        .form-section h3 {
+            margin-top: 0;
+            color: #495057;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        .upload-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            margin-right: 10px;
+            position: relative;
+        }
+        .upload-icon::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            border: 2px solid white;
+            border-top: none;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 12px;
+            background: #f1f3f4;
+            border-radius: 8px;
+            border: 1px solid #e1e5e9;
+        }
+        .checkbox-container input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
+        }
+        .checkbox-container label {
+            margin: 0;
+            cursor: pointer;
+            color: #495057;
+            font-size: 0.95em;
+            font-weight: 500;
+        }
+        .file-types-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .file-type-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        .file-type-item:hover {
+            background: #e3f2fd;
+            border-color: #667eea;
+        }
+        .file-type-item input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
+        }
+        .file-type-item label {
+            margin: 0;
+            cursor: pointer;
+            color: #495057;
+            font-size: 0.9em;
+            font-weight: 500;
+            flex: 1;
+        }
+        .file-type-count {
+            color: #6c757d;
+            font-size: 0.8em;
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        .sync-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 0.9em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sync-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        .sync-btn:active {
+            transform: translateY(0);
+        }
+        .sync-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .sync-icon {
+            font-size: 1em;
+            transition: transform 0.3s ease;
+        }
+        .sync-btn.loading .sync-icon {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .storage-path-select {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+            font-size: 1em;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .storage-path-select:hover {
+            border-color: #667eea;
+            background: #e3f2fd;
+        }
+        .storage-path-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .refresh-btn {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .refresh-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+        }
+        .refresh-btn:active {
+            transform: translateY(0);
+        }
+        .refresh-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .refresh-icon {
+            font-size: 1em;
+            transition: transform 0.3s ease;
+        }
+        .refresh-btn.loading .refresh-icon {
+            animation: spin 1s linear infinite;
+        }
+        .info-text {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        
+        /* 加载遮罩层样式 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+        
+        .loading-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .loading-subtext {
+            color: #6c757d;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        /* 禁用状态样式 */
+        .form-disabled {
+            pointer-events: none;
+            opacity: 0.6;
+            filter: grayscale(50%);
+        }
+        
+        .form-disabled * {
+            cursor: not-allowed !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载遮罩层 -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loading-text">正在处理中...</div>
+            <div class="loading-subtext" id="loading-subtext">请稍候，不要关闭或刷新页面</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h1>📄 文档相似度比较</h1>
+        <div id="progress" style="display:none; margin-bottom:15px;">
+            <div style="height:8px;background:#e9ecef;border-radius:6px;overflow:hidden;">
+                <div id="bar" style="width:0%;height:8px;background:linear-gradient(90deg,#667eea,#764ba2);
+                transition: width .3s;"></div>
+            </div>
+            <div id="progress-text" style="margin-top:6px;color:#6c757d;font-size:12px;">正在处理，请稍候...</div>
+        </div>
+        <form id="upload-form" method="post" enctype="multipart/form-data" action="/single_compare">
+            <div class="form-group">
+                <label>比较模式:</label>
+                <div class="radio-group">
+                    <div class="radio-item"> 
+                        <input type="radio" name="comparison_mode" id="single_mode" value="single" checked>
+                        <label for="single_mode">单文件比较</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="comparison_mode" id="storage_mode" value="storage">
+                        <label for="storage_mode">存储库比较</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="comparison_mode" id="keyword_mode" value="keyword">
+                        <label for="keyword_mode">关键词匹配</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-section" id="single-compare-form">
+                <h3><span class="upload-icon"></span>单文件比较</h3>
+                <label for="files">选择两个文件（必须为相同格式）:</label>
+                <div class="file-input-container">
+                <input type="file" name="files" id="files" multiple accept=".pdf,.docx,.doc,.txt,.yaml,.yml,.xlsx,.xls" required>
+                </div>
+                <p class="info-text">支持的文件格式：PDF, DOCX, DOC,XLSX, XLS</p>
+                <p id="file-error" class="error" style="display: none;"></p>
+            </div>
+            <div class="form-section" id="storage-compare-form" style="display: none;">
+                <h3><span class="upload-icon"></span>存储库比较</h3>
+                <label for="uploaded_file">上传文件与存储库比较:</label>
+                <div class="file-input-container">
+                <input type="file" name="uploaded_file" id="uploaded_file" accept=".pdf,.docx,.doc,.txt,.yaml,.yml,.xlsx,.xls">
+                </div>
+                <div id="storage-path-container" style="margin-top: 15px;">
+                    <label for="storage-path-select" style="display: block; margin-bottom: 8px; font-weight: 500; color: #495057;">选择存储库路径：</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <select id="storage-path-select" name="selected_storage_path" class="storage-path-select">
+                            <option value="storage">加载中...</option>
+                        </select>
+                        <button type="button" id="refresh-paths-btn" class="refresh-btn" title="刷新存储库路径">
+                            <span class="refresh-icon">🔄</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="file-types-container" style="margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <p class="info-text" style="margin: 0;">请选择要比对的文件类型：</p>
+                        <button type="button" id="sync-storage-btn" class="sync-btn" title="同步存储库文件类型">
+                            <span class="sync-icon">🔄</span> 同步
+                        </button>
+                    </div>
+                    <div id="file-types-checkboxes" class="file-types-grid">
+                        <!-- 动态生成的文件类型复选框将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+            <div class="form-section" id="keyword-search-form" style="display: none;">
+                <h3><span class="upload-icon"></span>关键词匹配</h3>
+                <label for="keywords">输入关键词：</label>
+                <div class="file-input-container">
+                    <input type="text" name="keywords" id="keywords" placeholder="请输入要搜索的关键词..." style="width: 100%; padding: 15px; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1em;">
+                </div>
+                <div id="keyword-storage-path-container" style="margin-top: 15px;">
+                    <label for="keyword-storage-path-select" style="display: block; margin-bottom: 8px; font-weight: 500; color: #495057;">选择存储库路径：</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <select id="keyword-storage-path-select" name="selected_storage_path" class="storage-path-select">
+                            <option value="storage">加载中...</option>
+                        </select>
+                        <button type="button" id="keyword-refresh-paths-btn" class="refresh-btn" title="刷新存储库路径">
+                            <span class="refresh-icon">🔄</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="keyword-file-types-container" style="margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <p class="info-text" style="margin: 0;">请选择要搜索的文件类型：</p>
+                        <button type="button" id="keyword-sync-storage-btn" class="sync-btn" title="同步存储库文件类型">
+                            <span class="sync-icon">🔄</span> 同步
+                        </button>
+                    </div>
+                    <div id="keyword-file-types-checkboxes" class="file-types-grid">
+                        <!-- 动态生成的文件类型复选框将在这里显示 -->
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <label for="search_mode" style="display: block; margin-bottom: 8px; font-weight: 500; color: #495057;">搜索模式：</label>
+                    <select id="search_mode" name="search_mode" class="storage-path-select">
+                        <option value="exact">精确匹配</option>
+                        <option value="fuzzy">模糊匹配</option>
+                        <option value="regex">正则表达式</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="submit-btn">开始比较</button>
+        </form>
+        <p id="warn" style="margin-top:12px;color:#dc3545;font-size:13px;font-weight:700;">重要提示：比对过程中请勿关闭、刷新或离开本页面，否则任务将被中断！</p>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+    </div>
+
+    <script>
+        const form = document.getElementById('upload-form');
+        const fileInput = document.getElementById('files');
+        const fileError = document.getElementById('file-error');
+        const singleCompareForm = document.getElementById('single-compare-form');
+        const storageCompareForm = document.getElementById('storage-compare-form');
+        const keywordSearchForm = document.getElementById('keyword-search-form');
+
+        // 初始设置：单文件模式默认提交到 /single_compare
+        form.action = '/single_compare';
+
+        // 加载存储库路径列表
+        async function loadStoragePaths() {
+            const refreshBtn = document.getElementById('refresh-paths-btn');
+            const select = document.getElementById('storage-path-select');
+            
+            if (refreshBtn) {
+                refreshBtn.disabled = true;
+                refreshBtn.classList.add('loading');
+            }
+            
+            try {
+                const response = await fetch('/storage_compare/storage_paths');
+                const data = await response.json();
+                
+                select.innerHTML = '';
+                if (data.storage_paths && data.storage_paths.length > 0) {
+                    data.storage_paths.forEach(path => {
+                        const option = document.createElement('option');
+                        option.value = path.path;
+                        option.textContent = path.name;
+                        select.appendChild(option);
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.value = 'storage';
+                    option.textContent = 'storage (默认)';
+                    select.appendChild(option);
+                }
+            } catch (error) {
+                console.error('加载存储库路径失败:', error);
+                select.innerHTML = '<option value="storage">加载失败</option>';
+            } finally {
+                if (refreshBtn) {
+                    refreshBtn.disabled = false;
+                    refreshBtn.classList.remove('loading');
+                }
+            }
+        }
+
+        // 加载存储库文件类型
+        async function loadStorageFileTypes(showLoading = false) {
+            const syncBtn = document.getElementById('sync-storage-btn');
+            const container = document.getElementById('file-types-checkboxes');
+            const select = document.getElementById('storage-path-select');
+            
+            if (showLoading && syncBtn) {
+                syncBtn.disabled = true;
+                syncBtn.classList.add('loading');
+                syncBtn.innerHTML = '<span class="sync-icon">🔄</span> 同步中...';
+            }
+            
+            try {
+                const selectedPath = select ? select.value : 'storage';
+                const response = await fetch(`/storage_compare/file_types?path=${encodeURIComponent(selectedPath)}`);
+                const data = await response.json();
+                container.innerHTML = '';
+                
+                if (data.error) {
+                    container.innerHTML = `<p class="error">${data.error}</p>`;
+                } else if (data.file_types && data.file_types.length > 0) {
+                    data.file_types.forEach(fileType => {
+                        const count = data.file_count_by_type[fileType] || 0;
+                        const item = document.createElement('div');
+                        item.className = 'file-type-item';
+                        item.innerHTML = `
+                            <input type="checkbox" id="type_${fileType}" name="selected_file_types" value="${fileType}">
+                            <label for="type_${fileType}">${fileType.toUpperCase()}</label>
+                            <span class="file-type-count">${count}</span>
+                        `;
+                        container.appendChild(item);
+                    });
+                } else {
+                    container.innerHTML = '<p class="info-text">存储库中暂无文件</p>';
+                }
+            } catch (error) {
+                console.error('加载文件类型失败:', error);
+                container.innerHTML = '<p class="error">加载文件类型失败</p>';
+            } finally {
+                if (showLoading && syncBtn) {
+                    syncBtn.disabled = false;
+                    syncBtn.classList.remove('loading');
+                    syncBtn.innerHTML = '<span class="sync-icon">🔄</span> 同步';
+                }
+            }
+        }
+
+        // 监听所有radio按钮的变化
+        document.querySelectorAll('input[name="comparison_mode"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                if (radio.value === 'single') {
+                singleCompareForm.style.display = 'block';
+                storageCompareForm.style.display = 'none';
+                    keywordSearchForm.style.display = 'none';
+                fileInput.required = true;
+                document.getElementById('uploaded_file').required = false;
+                    document.getElementById('keywords').required = false;
+                    form.action = '/single_compare';
+                } else if (radio.value === 'storage') {
+                singleCompareForm.style.display = 'none';
+                storageCompareForm.style.display = 'block';
+                    keywordSearchForm.style.display = 'none';
+                fileInput.required = false;
+                document.getElementById('uploaded_file').required = true;
+                    document.getElementById('keywords').required = false;
+                    form.action = '/storage_compare';
+                    // 切换到存储库模式时加载路径和文件类型
+                    loadStoragePaths();
+                    loadStorageFileTypes();
+                } else if (radio.value === 'keyword') {
+                    singleCompareForm.style.display = 'none';
+                    storageCompareForm.style.display = 'none';
+                    keywordSearchForm.style.display = 'block';
+                    fileInput.required = false;
+                    document.getElementById('uploaded_file').required = false;
+                    document.getElementById('keywords').required = true;
+                    form.action = '/keyword_search';
+                    // 切换到关键词搜索模式时加载路径和文件类型
+                    loadKeywordStoragePaths();
+                    loadKeywordStorageFileTypes();
+                }
+            });
+        });
+
+        // 关键词搜索相关函数
+        async function loadKeywordStoragePaths() {
+            const refreshBtn = document.getElementById('keyword-refresh-paths-btn');
+            const select = document.getElementById('keyword-storage-path-select');
+            
+            if (refreshBtn) {
+                refreshBtn.disabled = true;
+                refreshBtn.classList.add('loading');
+            }
+            
+            try {
+                const response = await fetch('/keyword_search/storage_paths');
+                const data = await response.json();
+                
+                select.innerHTML = '';
+                if (data.storage_paths && data.storage_paths.length > 0) {
+                    data.storage_paths.forEach(path => {
+                        const option = document.createElement('option');
+                        option.value = path.path;
+                        option.textContent = path.name;
+                        select.appendChild(option);
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.value = 'storage';
+                    option.textContent = 'storage (默认)';
+                    select.appendChild(option);
+                }
+            } catch (error) {
+                console.error('加载存储库路径失败:', error);
+                select.innerHTML = '<option value="storage">加载失败</option>';
+            } finally {
+                if (refreshBtn) {
+                    refreshBtn.disabled = false;
+                    refreshBtn.classList.remove('loading');
+                }
+            }
+        }
+
+        async function loadKeywordStorageFileTypes(showLoading = false) {
+            const syncBtn = document.getElementById('keyword-sync-storage-btn');
+            const container = document.getElementById('keyword-file-types-checkboxes');
+            const select = document.getElementById('keyword-storage-path-select');
+            
+            if (showLoading && syncBtn) {
+                syncBtn.disabled = true;
+                syncBtn.classList.add('loading');
+                syncBtn.innerHTML = '<span class="sync-icon">🔄</span> 同步中...';
+            }
+            
+            try {
+                const selectedPath = select ? select.value : 'storage';
+                const response = await fetch(`/keyword_search/file_types?path=${encodeURIComponent(selectedPath)}`);
+                const data = await response.json();
+                container.innerHTML = '';
+                
+                if (data.error) {
+                    container.innerHTML = `<p class="error">${data.error}</p>`;
+                } else if (data.file_types && data.file_types.length > 0) {
+                    data.file_types.forEach(fileType => {
+                        const count = data.file_count_by_type[fileType] || 0;
+                        const item = document.createElement('div');
+                        item.className = 'file-type-item';
+                        item.innerHTML = `
+                            <input type="checkbox" id="keyword_type_${fileType}" name="selected_file_types" value="${fileType}">
+                            <label for="keyword_type_${fileType}">${fileType.toUpperCase()}</label>
+                            <span class="file-type-count">${count}</span>
+                        `;
+                        container.appendChild(item);
+                    });
+                } else {
+                    container.innerHTML = '<p class="info-text">存储库中暂无文件</p>';
+                }
+            } catch (error) {
+                console.error('加载文件类型失败:', error);
+                container.innerHTML = '<p class="error">加载文件类型失败</p>';
+            } finally {
+                if (showLoading && syncBtn) {
+                    syncBtn.disabled = false;
+                    syncBtn.classList.remove('loading');
+                    syncBtn.innerHTML = '<span class="sync-icon">🔄</span> 同步';
+                }
+            }
+        }
+
+        // 监听同步按钮点击事件
+        document.addEventListener('DOMContentLoaded', () => {
+            const syncBtn = document.getElementById('sync-storage-btn');
+            const refreshBtn = document.getElementById('refresh-paths-btn');
+            const pathSelect = document.getElementById('storage-path-select');
+            
+            // 关键词搜索相关按钮
+            const keywordSyncBtn = document.getElementById('keyword-sync-storage-btn');
+            const keywordRefreshBtn = document.getElementById('keyword-refresh-paths-btn');
+            const keywordPathSelect = document.getElementById('keyword-storage-path-select');
+            
+            if (syncBtn) {
+                syncBtn.addEventListener('click', () => {
+                    loadStorageFileTypes(true);
+                });
+            }
+            
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', () => {
+                    loadStoragePaths();
+                });
+            }
+            
+            if (pathSelect) {
+                pathSelect.addEventListener('change', () => {
+                    // 路径变化时自动刷新文件类型
+                    loadStorageFileTypes(true);
+                });
+            }
+            
+            // 关键词搜索按钮事件
+            if (keywordSyncBtn) {
+                keywordSyncBtn.addEventListener('click', () => {
+                    loadKeywordStorageFileTypes(true);
+                });
+            }
+            
+            if (keywordRefreshBtn) {
+                keywordRefreshBtn.addEventListener('click', () => {
+                    loadKeywordStoragePaths();
+                });
+            }
+            
+            if (keywordPathSelect) {
+                keywordPathSelect.addEventListener('change', () => {
+                    // 路径变化时自动刷新文件类型
+                    loadKeywordStorageFileTypes(true);
+                });
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            const files = fileInput.files;
+            fileError.style.display = 'none';
+            if (files.length !== 2) {
+                fileError.textContent = '请正好选择两个文件';
+                fileError.style.display = 'block';
+                fileInput.value = '';
+                return;
+            }
+            const ext1 = files[0].name.split('.').pop().toLowerCase();
+            const ext2 = files[1].name.split('.').pop().toLowerCase();
+            if (ext1 !== ext2) {
+                fileError.textContent = '两个文件必须为相同格式';
+                fileError.style.display = 'block';
+                fileInput.value = '';
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // 阻止表单默认提交
+
+            const currentMode = document.querySelector('input[name="comparison_mode"]:checked').value;
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const container = document.querySelector('.container');
+            const submitBtn = form.querySelector('.submit-btn');
+
+            // 客户端验证
+            if (currentMode === 'single') {
+                const files = fileInput.files;
+                if (files.length !== 2) {
+                    fileError.textContent = '请正好选择两个文件';
+                    fileError.style.display = 'block';
+                    return;
+                }
+                 const ext1 = files[0].name.split('.').pop().toLowerCase();
+                 const ext2 = files[1].name.split('.').pop().toLowerCase();
+                 if (ext1 !== ext2) {
+                    fileError.textContent = '两个文件必须为相同格式';
+                    fileError.style.display = 'block';
+                    return;
+                 }
+            }
+            
+            // 显示加载动画
+            loadingOverlay.style.display = 'flex';
+            container.classList.add('form-disabled');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '正在上传...';
+
+            const formData = new FormData(form);
+            const actionUrl = form.action;
+
+            try {
+                const response = await fetch(actionUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`服务器错误: ${response.statusText}`);
+                }
+
+                const contentType = (response.headers.get('content-type') || '').toLowerCase();
+                if (contentType.includes('application/json')) {
+                    const data = await response.json();
+
+                    if (data.task_id && data.progress_url) {
+                        // 异步任务启动成功，跳转到进度页面
+                        window.location.href = data.progress_url;
+                        return;
+                    } else if (data.redirect_url) {
+                        // 对于简单的、非轮询的任务，直接跳转
+                        window.location.href = data.redirect_url;
+                        return;
+                    } else {
+                        const errorMsg = data.error || '提交失败，请重试。';
+                        fileError.textContent = errorMsg;
+                        fileError.style.display = 'block';
+                        throw new Error(errorMsg);
+                    }
+                } else {
+                    // 非JSON（例如服务器直接返回HTML结果页），直接渲染返回的HTML
+                    const html = await response.text();
+                    document.open();
+                    document.write(html);
+                    document.close();
+                    return;
+                }
+
+            } catch (error) {
+                console.error('提交失败:', error);
+                fileError.textContent = '请求失败，请检查网络或联系管理员。';
+                fileError.style.display = 'block';
+                
+                // 隐藏加载动画
+                loadingOverlay.style.display = 'none';
+                container.classList.remove('form-disabled');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '开始比较';
+            }
+        });
+        
+        // 页面加载完成时隐藏加载遮罩层（防止页面刷新后仍显示）
+        window.addEventListener('load', () => {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const container = document.querySelector('.container');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
+            if (container) {
+                container.classList.remove('form-disabled');
+            }
+            // 重置所有任务相关状态
+            currentTaskId = null;
+            currentTaskType = null;
+            isFormSubmitting = false;
+            cancellationSent = false;
+            // 停止定期检查
+            stopCancellationCheck();
+            console.log('页面加载完成，已重置所有任务状态');
+        });
+        
+        
+        // 全局变量存储当前任务ID
+        let currentTaskId = null;
+        let currentTaskType = null;
+        let isFormSubmitting = false; // 标记是否正在提交表单
+        let cancellationSent = false; // 标记是否已发送取消请求
+        let cancellationCheckInterval = null; // 定期检查间隔
+        
+        // 发送取消请求的函数
+        function sendCancellationRequest() {
+            console.log(`尝试发送取消请求 - currentTaskId: ${currentTaskId}, currentTaskType: ${currentTaskType}, cancellationSent: ${cancellationSent}`);
+            
+            if (currentTaskId && currentTaskType && !cancellationSent) {
+                cancellationSent = true;
+                const cancelUrl = `/${currentTaskType}/cancel/${currentTaskId}`;
+                console.log(`准备发送取消请求到: ${cancelUrl}`);
+                
+                // 使用多种方法确保取消请求能够发送
+                let success = false;
+                
+                // 方法1: sendBeacon
+                if (navigator.sendBeacon) {
+                    try {
+                        success = navigator.sendBeacon(cancelUrl, JSON.stringify({}));
+                        console.log(`sendBeacon结果: ${success}`);
+                        if (success) {
+                            console.log(`✅ 已通过sendBeacon发送取消任务请求: ${currentTaskId}`);
+                        }
+                    } catch (error) {
+                        console.error(`sendBeacon失败: ${error}`);
+                    }
+                }
+                
+                // 方法2: 如果sendBeacon失败，使用fetch
+                if (!success) {
+                    try {
+                        fetch(cancelUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({}),
+                            keepalive: true
+                        }).then(response => {
+                            console.log(`✅ 已通过fetch发送取消任务请求: ${currentTaskId}, 状态: ${response.status}`);
+                        }).catch(error => {
+                            console.error(`fetch取消请求失败: ${error}`);
+                            
+                            // 方法3: 最后尝试同步XHR
+                            try {
+                                const xhr = new XMLHttpRequest();
+                                xhr.open('POST', cancelUrl, false);
+                                xhr.setRequestHeader('Content-Type', 'application/json');
+                                xhr.send(JSON.stringify({}));
+                                console.log(`✅ 已通过同步XHR发送取消任务请求: ${currentTaskId}, 状态: ${xhr.status}`);
+                            } catch (xhrError) {
+                                console.error(`同步XHR取消请求也失败: ${xhrError}`);
+                            }
+                        });
+                    } catch (error) {
+                        console.error(`fetch请求创建失败: ${error}`);
+                    }
+                }
+            } else {
+                console.log(`❌ 不满足发送取消请求的条件`);
+                if (!currentTaskId) console.log(`  - 缺少taskId`);
+                if (!currentTaskType) console.log(`  - 缺少taskType`);
+                if (isFormSubmitting) console.log(`  - 正在提交表单`);
+                if (cancellationSent) console.log(`  - 已发送过取消请求`);
+            }
+        }
+        
+        // 开始定期检查页面状态
+        function startCancellationCheck() {
+            if (cancellationCheckInterval) {
+                clearInterval(cancellationCheckInterval);
+            }
+            
+            cancellationCheckInterval = setInterval(() => {
+                // 检查页面是否即将刷新或关闭
+                if (document.visibilityState === 'hidden' || document.hidden) {
+                    console.log('检测到页面隐藏，发送取消请求');
+                    sendCancellationRequest();
+                    clearInterval(cancellationCheckInterval);
+                }
+            }, 100); // 每100ms检查一次
+        }
+        
+        // 停止定期检查
+        function stopCancellationCheck() {
+            if (cancellationCheckInterval) {
+                clearInterval(cancellationCheckInterval);
+                cancellationCheckInterval = null;
+            }
+        }
+        
+        // 页面刷新或关闭时取消当前任务
+        window.addEventListener('beforeunload', (e) => {
+            console.log('🔥 beforeunload 事件触发');
+            console.log(`🔥 当前任务状态 - taskId: ${currentTaskId}, taskType: ${currentTaskType}, isFormSubmitting: ${isFormSubmitting}`);
+            // 只有在不是表单提交状态时才发送取消请求
+            if (currentTaskId && currentTaskType && !isFormSubmitting) {
+                console.log('beforeunload: 发送取消请求');
+                sendCancellationRequest();
+            } else if (isFormSubmitting) {
+                console.log('beforeunload: 表单提交中，跳过取消请求');
+            }
+        });
+        
+        // 页面卸载时也发送取消请求
+        window.addEventListener('unload', () => {
+            console.log('unload 事件触发');
+            console.log(`当前任务状态 - taskId: ${currentTaskId}, taskType: ${currentTaskType}, isFormSubmitting: ${isFormSubmitting}`);
+            // 只有在不是表单提交状态时才发送取消请求
+            if (currentTaskId && currentTaskType && !isFormSubmitting) {
+                console.log('unload: 发送取消请求');
+                sendCancellationRequest();
+            } else if (isFormSubmitting) {
+                console.log('unload: 表单提交中，跳过取消请求');
+            }
+        });
+        
+        // 页面隐藏时也发送取消请求（处理标签页切换等情况，且非提交场景）
+        let visibilityTimeout = null;
+        document.addEventListener('visibilitychange', () => {
+            console.log(`visibilitychange 事件触发 - hidden: ${document.hidden}`);
+            console.log(`当前任务状态 - taskId: ${currentTaskId}, taskType: ${currentTaskType}, isFormSubmitting: ${isFormSubmitting}`);
+            
+            // 清除之前的定时器
+            if (visibilityTimeout) {
+                clearTimeout(visibilityTimeout);
+                visibilityTimeout = null;
+            }
+            
+            // 只有在页面隐藏且不是表单提交状态时才发送取消请求
+            if (document.hidden && currentTaskId && currentTaskType && !isFormSubmitting) {
+                // 增加延迟检查，避免页面跳转时的误触发
+                visibilityTimeout = setTimeout(() => {
+                    // 再次检查页面是否仍然隐藏
+                    if (document.hidden && currentTaskId && currentTaskType && !isFormSubmitting) {
+                        console.log('visibilitychange: 页面隐藏超过3秒，发送取消请求');
+                        sendCancellationRequest();
+                    }
+                }, 3000); // 延迟3秒检查，给用户更多时间切换回来
+            } else if (!document.hidden && visibilityTimeout) {
+                // 页面重新可见时，清除取消定时器
+                console.log('visibilitychange: 页面重新可见，取消取消请求');
+                clearTimeout(visibilityTimeout);
+                visibilityTimeout = null;
+            }
+        });
+        
+        // 心跳检测机制：定期检查任务状态
+        let heartbeatInterval = null;
+        let lastHeartbeat = Date.now();
+        
+        function startHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+            }
+            
+            heartbeatInterval = setInterval(() => {
+                const now = Date.now();
+                const timeSinceLastHeartbeat = now - lastHeartbeat;
+                
+                // 如果超过30秒没有活动，且页面隐藏，则取消任务
+                if (timeSinceLastHeartbeat > 30000 && document.hidden && currentTaskId && currentTaskType && !isFormSubmitting) {
+                    console.log('心跳检测：页面隐藏超过30秒，发送取消请求');
+                    sendCancellationRequest();
+                }
+                
+                lastHeartbeat = now;
+            }, 10000); // 每10秒检查一次
+        }
+        
+        function stopHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        }
+        
+        // 监听用户活动，更新心跳时间
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+            document.addEventListener(event, () => {
+                lastHeartbeat = Date.now();
+            }, true);
+        });
+        
+        // 页面可见性变化时管理心跳
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // 页面隐藏时启动心跳检测
+                startHeartbeat();
+                // 通知后端页面已隐藏
+                sendPageVisibilityChange('hidden');
+            } else {
+                // 页面可见时停止心跳检测
+                stopHeartbeat();
+                lastHeartbeat = Date.now();
+                // 通知后端页面已可见
+                sendPageVisibilityChange('visible');
+            }
+        });
+        
+        // 发送页面可见性变化到后端
+        function sendPageVisibilityChange(visibility) {
+            try {
+                fetch('/api/page_visibility', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        visibility: visibility
+                    })
+                }).catch(error => {
+                    console.log('发送页面可见性变化失败:', error);
+                });
+            } catch (error) {
+                console.log('发送页面可见性变化时出错:', error);
+            }
+        }
+        
+        // 添加页面加载时的调试信息
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('页面DOM加载完成');
+            console.log(`初始任务状态 - taskId: ${currentTaskId}, taskType: ${currentTaskType}, isFormSubmitting: ${isFormSubmitting}`);
+            // 重置所有任务相关状态
+            currentTaskId = null;
+            currentTaskType = null;
+            cancellationSent = false;
+            isFormSubmitting = false;
+            // 停止定期检查
+            stopCancellationCheck();
+            console.log('已重置所有任务状态');
+        });
+    </script>
+</body>
+</html>

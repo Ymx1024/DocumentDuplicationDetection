@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>存储库比对结果</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .main-content {
+            display: flex;
+            gap: 20px;
+        }
+        .results-section {
+            flex: 1;
+            min-width: 0;
+        }
+        .file-status-section {
+            width: 300px;
+            flex-shrink: 0;
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        h2 {
+            color: #555;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: left; 
+            vertical-align: top; 
+        }
+        th { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+        .error { 
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+        .success { 
+            color: #155724;
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+        .high-similarity { 
+            background-color: #fff3cd !important;
+            border-left: 4px solid #ffc107 !important;
+            font-weight: bold;
+        }
+        .high-similarity td {
+            background-color: #fff3cd !important;
+        }
+        .similarity-95-plus {
+            background-color: #f8d7da !important;
+            border-left: 4px solid #dc3545 !important;
+            color: #721c24 !important;
+            font-weight: bold;
+        }
+        .similarity-95-plus td {
+            background-color: #f8d7da !important;
+            color: #721c24 !important;
+        }
+        .word-list { 
+            list-style-type: none; 
+            padding-left: 0; 
+            min-width: 200px; 
+            max-width: 300px; 
+            word-wrap: break-word; 
+        }
+        .word-list li { 
+            margin: 4px 0; 
+            padding: 4px 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+        }
+        .similarity-reason {
+            max-width: 300px;
+            line-height: 1.5;
+            color: #495057;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        .back-link:hover {
+            background: #0056b3;
+            text-decoration: none;
+        }
+        .note {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            color: #004085;
+        }
+        .note strong {
+            color: #002752;
+        }
+        .file-status-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .file-status-box h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 16px;
+            font-weight: bold;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 8px;
+        }
+        .file-status-box.success h3 {
+            color: #28a745;
+            border-bottom-color: #28a745;
+        }
+        .file-status-box.failed h3 {
+            color: #dc3545;
+            border-bottom-color: #dc3545;
+        }
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .file-list li {
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            word-break: break-all;
+            border-left: 3px solid transparent;
+        }
+        .file-list li.success-item {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .file-list li.failed-item {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .file-list li .error-detail {
+            font-size: 11px;
+            color: #6c757d;
+            margin-top: 2px;
+            font-style: italic;
+        }
+        .status-summary {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .status-summary .summary-item {
+            display: inline-block;
+            margin: 0 15px;
+            font-weight: bold;
+        }
+        .status-summary .success-count {
+            color: #28a745;
+        }
+        .status-summary .failed-count {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+    <h1>存储库比对结果</h1>
+        <a href="{{ url_for('index') }}" class="back-link">← 返回上传页面</a>
+
+    {% if error %}
+        <p class="error">{{ error }}</p>
+    {% endif %}
+
+    {% if results %}
+        <h2>上传文件: {{ results[0].uploaded_filename }}</h2>
+            
+            <div class="main-content">
+                <div class="results-section">
+        <table>
+            <tr>
+                <th>存储文件</th>
+                <th>相似度 (%)</th>
+                <th>相似原因</th>
+                <th>高频词汇</th>
+            </tr>
+            {% for result in results %}
+                            <tr {% if result.similarity >= 95 %}class="similarity-95-plus"
+                                {% elif result.similarity >= 80 %}class="high-similarity"
+                                {% endif %}>
+                    <td>{{ result.filename }}</td>
+                    <td>{{ result.similarity }}%</td>
+                                <td class="similarity-reason">
+                                    {% if result.similarity_reason %}
+                                        {{ result.similarity_reason }}
+                                    {% else %}
+                                        <em>相似度较低，内容相关性不明显</em>
+                                    {% endif %}
+                                </td>
+                    <td>
+                        {% if result.common_words %}
+                            <ul class="word-list">
+                                {% for word, count in result.common_words %}
+                                    <li>{{ word }} (出现次数: {{ count }})</li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                                        <em>无共同词汇</em>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+                    
+                    <div class="note">
+                        <strong>说明：</strong><br>
+                        • <span class="similarity-95-plus" style="padding: 2px 6px; border-radius: 3px;">红色高亮</span>：相似度 ≥ 95%，<strong>强烈建议检查文件内容</strong><br>
+                        • <span class="high-similarity" style="padding: 2px 6px; border-radius: 3px;">黄色高亮</span>：相似度 ≥ 80%，建议关注<br>
+                        • 相似原因基于文件内容的词汇分析和语义相关性计算
+                    </div>
+                </div>
+                
+                <div class="file-status-section">
+                    <!-- 比对统计摘要 -->
+                    <div class="status-summary">
+                        <div class="summary-item">
+                            <span class="success-count">✓ 成功: {{ success_files|length }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="failed-count">✗ 失败: {{ failed_files|length }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 成功文件列表 -->
+                    {% if success_files %}
+                    <div class="file-status-box success">
+                        <h3>✓ 比对成功文件 ({{ success_files|length }})</h3>
+                        <ul class="file-list">
+                            {% for file in success_files %}
+                                <li class="success-item">{{ file.filename }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 失败文件列表 -->
+                    {% if failed_files %}
+                    <div class="file-status-box failed">
+                        <h3>✗ 比对失败文件 ({{ failed_files|length }})</h3>
+                        <ul class="file-list">
+                            {% for file in failed_files %}
+                                <li class="failed-item">
+                                    {{ file.filename }}
+                                    <div class="error-detail">{{ file.error }}</div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+    {% else %}
+        <h2>无比对结果</h2>
+            <p>未找到可比较的文件或比较过程中出现错误。</p>
+            <a href="{{ url_for('index') }}" class="back-link">返回上传页面</a>
+    {% endif %}
+    </div>
+
+    <script>
+        // 防止表单重复提交和结果丢失的完整解决方案
+        (function() {
+            // 页面状态管理
+            let pageLoaded = true;
+            let isLeavingIntentionally = false;
+            
+            // 创建美观的确认对话框
+            function showCustomConfirm(title, message, onConfirm, onCancel) {
+                // 创建模态框
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.7);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                `;
+                
+                const dialog = document.createElement('div');
+                dialog.style.cssText = `
+                    background: white;
+                    padding: 30px;
+                    border-radius: 15px;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+                    max-width: 500px;
+                    width: 90%;
+                    text-align: center;
+                    animation: fadeIn 0.3s ease;
+                `;
+                
+                dialog.innerHTML = `
+                    <div style="margin-bottom: 20px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                        <h3 style="margin: 0 0 15px 0; color: #333; font-size: 20px;">${title}</h3>
+                        <p style="margin: 0; color: #666; line-height: 1.5; font-size: 16px;">${message}</p>
+                    </div>
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button id="confirmBtn" style="
+                            background: #dc3545;
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            font-size: 16px;
+                            cursor: pointer;
+                            transition: background 0.3s;
+                        ">确认离开</button>
+                        <button id="cancelBtn" style="
+                            background: #007bff;
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            font-size: 16px;
+                            cursor: pointer;
+                            transition: background 0.3s;
+                        ">取消</button>
+                    </div>
+                `;
+                
+                // 添加动画样式
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: scale(0.9); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                modal.appendChild(dialog);
+                document.body.appendChild(modal);
+                
+                // 按钮事件
+                document.getElementById('confirmBtn').onclick = function() {
+                    document.body.removeChild(modal);
+                    document.head.removeChild(style);
+                    if (onConfirm) onConfirm();
+                };
+                
+                document.getElementById('cancelBtn').onclick = function() {
+                    document.body.removeChild(modal);
+                    document.head.removeChild(style);
+                    if (onCancel) onCancel();
+                };
+                
+                // 点击背景关闭
+                modal.onclick = function(e) {
+                    if (e.target === modal) {
+                        document.body.removeChild(modal);
+                        document.head.removeChild(style);
+                        if (onCancel) onCancel();
+                    }
+                };
+                
+                // ESC键关闭
+                const escHandler = function(e) {
+                    if (e.key === 'Escape') {
+                        document.body.removeChild(modal);
+                        document.head.removeChild(style);
+                        document.removeEventListener('keydown', escHandler);
+                        if (onCancel) onCancel();
+                    }
+                };
+                document.addEventListener('keydown', escHandler);
+            }
+            
+            // 监听页面刷新/关闭事件
+            window.addEventListener('beforeunload', function(e) {
+                if (pageLoaded && !isLeavingIntentionally) {
+                    // 使用自定义确认对话框替代默认浏览器提示
+                    e.preventDefault();
+                    e.returnValue = ''; // 现代浏览器要求返回空字符串
+                    
+                    // 显示自定义确认对话框
+                    showCustomConfirm(
+                        '⚠️ 离开页面确认',
+                        '离开此页面将导致比对结果丢失！<br><br><strong>💡 建议操作：</strong><br>• 如需保存结果，请先截图或复制重要信息<br>• 如需进行新的比对，请点击"返回上传页面"按钮<br><br><strong>⚠️ 确定要离开页面吗？</strong>',
+                        function() {
+                            // 用户确认离开
+                            isLeavingIntentionally = true;
+                            // 不执行具体操作，让浏览器自然处理
+                        },
+                        function() {
+                            // 用户取消离开
+                            console.log('用户取消了离开页面');
+                        }
+                    );
+                    
+                    return ''; // 返回空字符串以阻止默认行为
+                }
+            });
+            
+            // 监听页面卸载事件
+            window.addEventListener('unload', function() {
+                pageLoaded = false;
+            });
+            
+            // DOM加载完成后的处理
+            document.addEventListener('DOMContentLoaded', function() {
+                // 阻止所有表单的意外提交
+                const forms = document.querySelectorAll('form');
+                forms.forEach(function(form) {
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        showCustomConfirm(
+                            '⚠️ 避免重复提交任务',
+                            '此页面为<strong>结果展示页面</strong>，重新提交将：<br><br>• 🔄 重复执行相同的比对任务<br>• 💰 浪费服务器计算资源<br>• ⏱️ 增加不必要的等待时间<br><br><strong>💡 建议操作：</strong><br>如需进行新的比对，请点击下方"返回上传页面"按钮<br><br><strong>⚠️ 确定要重复提交吗？</strong>',
+                            function() {
+                                // 用户确认重新提交
+                                isLeavingIntentionally = true;
+                                // 添加确认提示
+                                console.warn('用户确认重复提交任务');
+                                form.submit();
+                            },
+                            function() {
+                                console.log('用户取消了重复提交');
+                            }
+                        );
+                        return false;
+                    });
+                });
+                
+                // 为返回链接添加处理
+                const backLinks = document.querySelectorAll('.back-link');
+                backLinks.forEach(function(link) {
+                    link.addEventListener('click', function(e) {
+                        isLeavingIntentionally = true;
+                        pageLoaded = false;
+                    });
+                });
+                
+                // 添加页面顶部提示条
+                const notice = document.createElement('div');
+                notice.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 8px 0;
+                    text-align: center;
+                    font-size: 14px;
+                    z-index: 1000;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                `;
+                notice.innerHTML = `
+                    <span style="margin-right: 10px;">🛡️</span>
+                    <strong>结果页面保护：</strong>刷新或关闭将导致结果丢失
+                    <span style="margin-left: 15px; font-size: 12px; opacity: 0.9;">• 如需保存结果请截图 • 如需新比对请返回首页</span>
+                    <button onclick="this.parentElement.style.display='none'" style="
+                        position: absolute;
+                        right: 15px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        background: rgba(255,255,255,0.2);
+                        border: none;
+                        color: white;
+                        cursor: pointer;
+                        border-radius: 3px;
+                        padding: 2px 6px;
+                        font-size: 12px;
+                    ">✕</button>
+                `;
+                
+                document.body.appendChild(notice);
+                
+                // 调整页面内容的上边距，避免被提示条遮挡
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.style.marginTop = '50px';
+                }
+            });
+            
+            // 键盘快捷键处理
+            document.addEventListener('keydown', function(e) {
+                // F5 或 Ctrl+R 刷新时的确认
+                if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                    e.preventDefault();
+                    showCustomConfirm(
+                        '🔄 刷新页面确认',
+                        '刷新页面将导致比对结果丢失！<br><br><strong>💡 建议操作：</strong><br>• 如需保存结果，请先截图或复制重要信息<br>• 如需进行新的比对，请点击"返回上传页面"按钮<br><br><strong>⚠️ 确定要刷新页面吗？</strong>',
+                        function() {
+                            isLeavingIntentionally = true;
+                            location.reload();
+                        }
+                    );
+                    return false;
+                }
+                
+                // Ctrl+W 关闭标签页时的确认
+                if (e.ctrlKey && e.key === 'w') {
+                    e.preventDefault();
+                    showCustomConfirm(
+                        '❌ 关闭页面确认',
+                        '关闭页面将导致比对结果永久丢失！<br><br><strong>💡 建议操作：</strong><br>• 如需保存结果，请先截图或复制重要信息<br>• 如需进行新的比对，请点击"返回上传页面"按钮<br><br><strong>⚠️ 确定要关闭页面吗？</strong>',
+                        function() {
+                            isLeavingIntentionally = true;
+                            window.close();
+                        }
+                    );
+                    return false;
+                }
+            });
+            
+            // 浏览器历史管理
+            if (window.history && window.history.replaceState) {
+                // 替换当前历史状态，避免表单重新提交
+                const newUrl = window.location.href.split('?')[0];
+                window.history.replaceState(
+                    { page: 'result' }, 
+                    document.title, 
+                    newUrl
+                );
+            }
+            
+            // 页面可见性变化处理
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'hidden') {
+                    sessionStorage.setItem('resultPageVisited', 'true');
+                    sessionStorage.setItem('resultPageTime', Date.now().toString());
+                } else if (document.visibilityState === 'visible') {
+                    const visitTime = sessionStorage.getItem('resultPageTime');
+                    if (visitTime) {
+                        const timeDiff = Date.now() - parseInt(visitTime);
+                        if (timeDiff > 300000) { // 5分钟
+                            showCustomConfirm(
+                                '页面已过期',
+                                '您离开此页面已超过5分钟，结果可能已过期。<br><br>建议返回首页进行新的比对。',
+                                function() {
+                                    isLeavingIntentionally = true;
+                                    window.location.href = '/';
+                                }
+                            );
+                        }
+                    }
+                }
+            });
+            
+            // 右键菜单处理
+            document.addEventListener('contextmenu', function(e) {
+                // 允许右键，但添加提示
+                const target = e.target;
+                if (target.tagName === 'TABLE' || target.closest('table')) {
+                    // 在表格上右键时显示提示
+                    setTimeout(function() {
+                        console.log('💡 提示：如需保存结果，建议使用截图或复制文本的方式');
+                    }, 100);
+                }
+            });
+            
+            console.log('🛡️ 结果页面保护已启用：防止意外刷新、表单重复提交和结果丢失');
+        })();
+    </script>
+</body>
+</html>

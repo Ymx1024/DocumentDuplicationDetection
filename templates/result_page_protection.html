@@ -1,0 +1,273 @@
+<!-- 结果页面保护脚本 - 防止意外刷新和表单重复提交 -->
+<script>
+// 防止表单重复提交和结果丢失的完整解决方案
+(function() {
+    // 页面状态管理
+    let pageLoaded = true;
+    let isLeavingIntentionally = false;
+    
+    // 创建美观的确认对话框
+    function showCustomConfirm(title, message, onConfirm, onCancel) {
+        // 创建模态框
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        `;
+        
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        `;
+        
+        dialog.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                <h3 style="margin: 0 0 15px 0; color: #333; font-size: 20px;">${title}</h3>
+                <p style="margin: 0; color: #666; line-height: 1.5; font-size: 16px;">${message}</p>
+            </div>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button id="confirmBtn" style="
+                    background: #dc3545;
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    transition: background 0.3s;
+                ">确认离开</button>
+                <button id="cancelBtn" style="
+                    background: #007bff;
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    cursor: pointer;
+                    transition: background 0.3s;
+                ">取消</button>
+            </div>
+        `;
+        
+        // 添加动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: scale(0.9); }
+                to { opacity: 1; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        modal.appendChild(dialog);
+        document.body.appendChild(modal);
+        
+        // 按钮事件
+        document.getElementById('confirmBtn').onclick = function() {
+            document.body.removeChild(modal);
+            document.head.removeChild(style);
+            if (onConfirm) onConfirm();
+        };
+        
+        document.getElementById('cancelBtn').onclick = function() {
+            document.body.removeChild(modal);
+            document.head.removeChild(style);
+            if (onCancel) onCancel();
+        };
+        
+        // 点击背景关闭
+        modal.onclick = function(e) {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+                document.head.removeChild(style);
+                if (onCancel) onCancel();
+            }
+        };
+        
+        // ESC键关闭
+        const escHandler = function(e) {
+            if (e.key === 'Escape') {
+                document.body.removeChild(modal);
+                document.head.removeChild(style);
+                document.removeEventListener('keydown', escHandler);
+                if (onCancel) onCancel();
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+    
+    // 监听页面刷新/关闭事件
+    window.addEventListener('beforeunload', function(e) {
+        if (pageLoaded && !isLeavingIntentionally) {
+            // 使用自定义确认对话框替代默认浏览器提示
+            e.preventDefault();
+            e.returnValue = ''; // 现代浏览器要求返回空字符串
+            
+            // 显示自定义确认对话框
+            showCustomConfirm(
+                '⚠️ 离开页面确认',
+                '离开此页面将导致比对结果丢失！<br><br><strong>💡 建议操作：</strong><br>• 如需保存结果，请先截图或复制重要信息<br>• 如需进行新的比对，请返回首页<br><br><strong>⚠️ 确定要离开页面吗？</strong>',
+                function() {
+                    // 用户确认离开
+                    isLeavingIntentionally = true;
+                    // 不执行具体操作，让浏览器自然处理
+                },
+                function() {
+                    // 用户取消离开
+                    console.log('用户取消了离开页面');
+                }
+            );
+            
+            return ''; // 返回空字符串以阻止默认行为
+        }
+    });
+    
+    // 监听页面卸载事件
+    window.addEventListener('unload', function() {
+        pageLoaded = false;
+    });
+    
+    // DOM加载完成后的处理
+    document.addEventListener('DOMContentLoaded', function() {
+        // 阻止所有表单的意外提交
+        const forms = document.querySelectorAll('form');
+        forms.forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                showCustomConfirm(
+                    '重新提交确认',
+                    '此页面为结果展示页面，重新提交将重复执行比对任务，浪费服务器资源。<br><br><strong>建议：</strong>如需进行新的比对，请返回首页。',
+                    function() {
+                        // 用户确认重新提交
+                        isLeavingIntentionally = true;
+                        form.submit();
+                    }
+                );
+                return false;
+            });
+        });
+        
+        // 为返回链接添加处理
+        const backLinks = document.querySelectorAll('a[href="/"], a[href="' + window.location.origin + '/"]');
+        backLinks.forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                isLeavingIntentionally = true;
+                pageLoaded = false;
+            });
+        });
+        
+        // 添加页面顶部提示条
+        const notice = document.createElement('div');
+        notice.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 0;
+            text-align: center;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        `;
+        notice.innerHTML = `
+            <span style="margin-right: 10px;">💡</span>
+            <strong>提示：</strong>此页面为比对结果展示页面，刷新将导致结果丢失
+            <span style="margin-left: 15px; font-size: 12px; opacity: 0.9;">如需新的比对，请返回首页</span>
+        `;
+        
+        document.body.appendChild(notice);
+        
+        // 调整页面内容的上边距，避免被提示条遮挡
+        const body = document.body;
+        if (body) {
+            body.style.paddingTop = '50px';
+        }
+    });
+    
+        // 键盘快捷键处理
+        document.addEventListener('keydown', function(e) {
+            // F5 或 Ctrl+R 刷新时的确认
+            if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                e.preventDefault();
+                showCustomConfirm(
+                    '🔄 刷新页面确认',
+                    '刷新页面将导致比对结果丢失！<br><br><strong>💡 建议操作：</strong><br>• 如需保存结果，请先截图或复制重要信息<br>• 如需进行新的比对，请返回首页<br><br><strong>⚠️ 确定要刷新页面吗？</strong>',
+                    function() {
+                        isLeavingIntentionally = true;
+                        location.reload();
+                    }
+                );
+                return false;
+            }
+            
+            // Ctrl+W 关闭标签页时的确认
+            if (e.ctrlKey && e.key === 'w') {
+                e.preventDefault();
+                showCustomConfirm(
+                    '❌ 关闭页面确认',
+                    '关闭页面将导致比对结果永久丢失！<br><br><strong>💡 建议操作：</strong><br>• 如需保存结果，请先截图或复制重要信息<br>• 如需进行新的比对，请返回首页<br><br><strong>⚠️ 确定要关闭页面吗？</strong>',
+                    function() {
+                        isLeavingIntentionally = true;
+                        window.close();
+                    }
+                );
+                return false;
+            }
+        });
+    
+    // 浏览器历史管理
+    if (window.history && window.history.replaceState) {
+        // 替换当前历史状态，避免表单重新提交
+        const newUrl = window.location.href.split('?')[0];
+        window.history.replaceState(
+            { page: 'result' }, 
+            document.title, 
+            newUrl
+        );
+    }
+    
+    // 页面可见性变化处理
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+            sessionStorage.setItem('resultPageVisited', 'true');
+            sessionStorage.setItem('resultPageTime', Date.now().toString());
+        } else if (document.visibilityState === 'visible') {
+            const visitTime = sessionStorage.getItem('resultPageTime');
+            if (visitTime) {
+                const timeDiff = Date.now() - parseInt(visitTime);
+                if (timeDiff > 300000) { // 5分钟
+                    showCustomConfirm(
+                        '页面已过期',
+                        '您离开此页面已超过5分钟，结果可能已过期。<br><br>建议返回首页进行新的比对。',
+                        function() {
+                            isLeavingIntentionally = true;
+                            window.location.href = '/';
+                        }
+                    );
+                }
+            }
+        }
+    });
+    
+    console.log('🛡️ 结果页面保护已启用：防止意外刷新、表单重复提交和结果丢失');
+})();
+</script>

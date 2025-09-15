@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>正在处理 - 文件比对系统</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .progress-container {
+            text-align: center;
+            background: white;
+            padding: 50px 60px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+        .loader {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h1 {
+            margin: 0 0 15px 0;
+            font-size: 24px;
+            color: #3498db;
+        }
+        p {
+            margin: 0 0 30px 0;
+            font-size: 16px;
+            color: #666;
+        }
+        #cancel-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #cancel-btn:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="progress-container">
+    <div class="loader"></div>
+    <h1>正在处理您的请求</h1>
+    <p>请稍候，系统正在进行文件比对...</p>
+    <button id="cancel-btn">取消任务</button>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const taskId = "{{ task_id }}";
+        const taskType = "{{ task_type }}"; // 'single_compare', 'storage_compare', etc.
+        const resultUrl = `/${taskType}/result/${taskId}`;
+        const statusUrl = `/${taskType}/status/${taskId}`;
+        const cancelUrl = `/${taskType}/cancel/${taskId}`;
+        const homeUrl = "/";
+
+        let intervalId = setInterval(checkStatus, 2000); // 每2秒查询一次状态
+
+        function checkStatus() {
+            fetch(statusUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        clearInterval(intervalId);
+                        window.location.href = data.result_url;
+                    } else if (data.status === 'error') {
+                        clearInterval(intervalId);
+                        alert('任务处理出错: ' + data.message);
+                        window.location.href = homeUrl;
+                    }
+                    // 如果是 'pending' 或 'progress'，则继续轮询
+                })
+                .catch(error => {
+                    clearInterval(intervalId);
+                    console.error('状态查询失败:', error);
+                    alert('无法获取任务状态，请检查网络并重试。');
+                    window.location.href = homeUrl;
+                });
+        }
+
+        document.getElementById('cancel-btn').addEventListener('click', () => {
+            clearInterval(intervalId); // 停止轮询
+            fetch(cancelUrl, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'cancelled') {
+                        alert('任务已成功取消。');
+                    } else {
+                        alert('任务取消失败或已完成。');
+                    }
+                    window.location.href = homeUrl;
+                })
+                .catch(error => {
+                    console.error('取消请求失败:', error);
+                    alert('发送取消请求失败，请检查网络。');
+                    window.location.href = homeUrl;
+                });
+        });
+    });
+</script>
+
+</body>
+</html> 
